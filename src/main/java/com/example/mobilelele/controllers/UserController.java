@@ -1,0 +1,83 @@
+package com.example.mobilelele.controllers;
+
+import com.example.mobilelele.models.dtos.UserDTOs.UserLoginDTO;
+import com.example.mobilelele.models.dtos.UserDTOs.UserRegisterDTO;
+import com.example.mobilelele.services.UserService;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+
+@Controller
+@RequestMapping("/users")
+public class UserController {
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @ModelAttribute("userModel")
+    public UserRegisterDTO initUserModel() {
+        return new UserRegisterDTO();
+    }
+
+    @GetMapping("/login")
+    public String loginPage() {
+        return "auth-login";
+    }
+
+    @PostMapping("login")
+    public String loginUser(
+            @Valid UserLoginDTO userLoginDTO,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes)
+    {
+        if (bindingResult.hasErrors()) {
+            handleUserPostErrors(userLoginDTO, bindingResult, redirectAttributes);
+            return "redirect:/users/login";
+        }
+
+        this.userService.userLogin(userLoginDTO);
+        return "redirect:/";
+    }
+
+    @GetMapping("/register")
+    public String registerPage() {
+        return "auth-register";
+    }
+
+    @PostMapping("/register")
+    public String registerPage(
+            @Valid UserRegisterDTO user,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes)
+    {
+        if (bindingResult.hasErrors()) {
+            handleUserPostErrors(user, bindingResult, redirectAttributes);
+            return "redirect:/users/register";
+        }
+
+        this.userService.registerUser(user);
+        return "redirect:/users/login";
+    }
+
+    @GetMapping("/logout")
+    public String logout() {
+        this.userService.logout();
+
+        return "redirect:/";
+    }
+
+
+    private void handleUserPostErrors(Object userInput, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("userModel", userInput);
+        redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.userModel",
+                bindingResult);
+    }
+}
